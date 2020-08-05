@@ -1,11 +1,12 @@
-import React, { useRef, useMemo, createRef, useState, useCallback, Suspense } from 'react'
+import React, { useRef, useMemo, createRef, useState, useCallback, Suspense, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import * as THREE from 'three'
-import { Canvas, createPortal, useFrame, useThree } from 'react-three-fiber'
+import { Canvas, createPortal, useFrame, useThree, extend } from 'react-three-fiber'
 import { Plane, Html, Box } from 'drei'
 import { DeviceOrientationControls } from 'three/examples/jsm/controls/DeviceOrientationControls'
 import { Physics, usePlane, useSphere } from 'use-cannon'
 import clamp from 'lodash.clamp'
+import * as meshline from 'threejs-meshline'
 
 import { addBarycentricCoordinates, unindexBufferGeometry } from './geom'
 import vert from './shader/shader.vert'
@@ -14,9 +15,19 @@ import frag from './shader/shader.frag'
 import 'styled-components/macro'
 import './styles.css'
 
+extend(meshline)
+
 const rotation = createRef()
 const betaRef = createRef(0)
 const gammaRef = createRef(0)
+
+function Mouse() {
+  const { viewport } = useThree()
+  const [, api] = useSphere(() => ({ type: "Kinematic", args: 6 }))
+  return useFrame(state =>
+    api.position.set((state.mouse.x * viewport.width) / 2, (state.mouse.y * viewport.height) / 2, 7),
+  )
+}
 
 function PhyPlane({ plain, rotate, rotation = [0, 0, 0], ...props }) {
   const [ref, api] = usePlane(() => ({ ...props, rotation }))
@@ -47,29 +58,30 @@ function InstancedSpheres() {
       uniforms: {
         time: { value: 0 },
         
-        fill: { value: new THREE.Color(0xa7f000) },
+        fill: { value: new THREE.Color(0xf2003c) },
         stroke: { value: new THREE.Color(0xf2003c) },
         
         noiseA: { value: false },
         noiseB: { value: false },
+        backfaceColor: { value: false },
         
         dualStroke: { value: false },
         
         seeThrough: { value: true },
         
-        insideAltColor: { value: true },
+        insideAltColor: { value: false },
         
-        thickness: { value: 0.2 },
+        thickness: { value: 0.1 },
         secondThickness: { value: 0.5 },
         
-        dashEnabled: { value: true },
+        dashEnabled: { value: false },
         dashRepeats: { value: 10.0 },
         dashOverlap: { value: false },
         dashLength: { value: 0.5 },
         dashAnimate: { value: false },
 
         squeeze: { value: true },
-        squeezeMin: { value: 0.3 },
+        squeezeMin: { value: 0.5 },
         squeezeMax: { value: 1.0 }
       },
       fragmentShader: frag,
@@ -86,9 +98,25 @@ function InstancedSpheres() {
     return geometry
   }, [])
 
+  useFrame(() => void (ref.current.material.uniforms.time.value += 0.01))
+
   return (
     <mesh ref={ref} geometry={geometry}>
       <shaderMaterial {...materialProps} />
+    </mesh>
+  )
+}
+
+function MyBox({ speed = 0.0001 , ...props}) {
+  const material = useRef()
+  useFrame(() => (material.current.uniforms.dashOffset.value -= speed))
+ 
+  return (
+    <mesh {...props}>
+      <meshLine attach="geometry" vertices={new THREE.BoxGeometry(1, 1, 1, 32,32,32).vertices} />
+      <meshLineMaterial attach="material" ref={material} transparent lineWidth={0.002} color={0xffffff}
+      dashArray={0.3} dashRatio={0.8}
+      />
     </mesh>
   )
 }
@@ -111,6 +139,8 @@ function DepthCube({ scene, camera }) {
     [aspect]
   )
 
+  
+
   return (
     <>
       <group position={[0, 0, -0.15]}>
@@ -126,13 +156,21 @@ function DepthCube({ scene, camera }) {
             </group>
           </Suspense>
         </Physics>
-        <Box position={[0, 0, 0.5]} args={[1, 1, 1, 8, 8, 32]}>
-          <meshBasicMaterial wireframe attachArray="material" />
-          <meshBasicMaterial wireframe attachArray="material" />
-          <meshBasicMaterial wireframe attachArray="material" />
-          <meshBasicMaterial wireframe attachArray="material" />
-          <meshBasicMaterial wireframe transparent opacity={0} attachArray="material" />
-          <meshBasicMaterial wireframe attachArray="material" />
+        <group position={[0, 0, 0.5]} >
+          <group scale={[1,1,2]} position={[0,0,0.5]} >
+            <MyBox speed={(1 + Math.random()) * 0.0005} />
+            <MyBox speed={(1 + Math.random()) * 0.0005} rotation={[0,0,Math.PI/2]} />
+            <MyBox speed={(1 + Math.random()) * 0.0005} />
+            <MyBox speed={(1 + Math.random()) * 0.0005} rotation={[0,0,Math.PI/2]} />
+          </group>
+        </group>
+        <Box position={[0, 0, 0.5]} args={[1, 1, 1]}>
+          <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
+          <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
+          <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
+          <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
+          <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} transparent opacity={0} attachArray="material" />
+          <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
         </Box>
         <ambientLight intensity={1} />
       </group>
