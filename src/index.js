@@ -23,10 +23,10 @@ const gammaRef = createRef(0)
 
 function Mouse() {
   const { viewport } = useThree()
-  const [, api] = useSphere(() => ({ type: "Kinematic", args: 6 }))
-  return useFrame(state =>
-    api.position.set((state.mouse.x * viewport.width) / 2, (state.mouse.y * viewport.height) / 2, 7),
-  )
+  return useFrame(state => {
+    betaRef.current = (state.mouse.x * viewport.width) / 2
+    gammaRef.current = (state.mouse.y * viewport.height) / 2
+  })
 }
 
 function PhyPlane({ plain, rotate, rotation = [0, 0, 0], ...props }) {
@@ -107,7 +107,49 @@ function InstancedSpheres() {
   )
 }
 
-function DepthCube({ scene, camera }) {
+function DepthCube({ width, height }) {
+
+  return (
+    <>
+      <group position={[0, 0, -0.15]}>
+        <Physics gravity={[0, 0, -30]}>
+          <PhyPlane rotate position={[0, 0, 0]} />
+          <PhyPlane position={[-0.5 * width, 0, 0]} rotation={[0, Math.PI / 2, 0]} />
+          <PhyPlane position={[0.5 * width, 0, 0]} rotation={[0, -(Math.PI / 2), 0]} />
+          <PhyPlane position={[0, 0.5 * height, 0]} rotation={[Math.PI / 2, 0, 0]} />
+          <PhyPlane position={[0, -0.5 * height, 0]} rotation={[-(Math.PI / 2), 0, 0]} />
+          <InstancedSpheres />
+        </Physics>
+        <group position={[0, 0, 0.5]}>
+          <Box position={[0, 0, -0.1]}  args={[width, height, 1]} >
+            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} transparent opacity={0} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
+          </Box>
+          <Box args={[width, height, 1, 8,16,16]}>
+            <meshBasicMaterial wireframe attachArray="material" />
+            <meshBasicMaterial wireframe attachArray="material" />
+            <meshBasicMaterial wireframe attachArray="material" />
+            <meshBasicMaterial wireframe attachArray="material" />
+            <meshBasicMaterial wireframe transparent opacity={0} attachArray="material" />
+            <meshBasicMaterial wireframe attachArray="material" />
+          </Box>
+        </group>
+        {/* <Mouse /> */}
+        <ambientLight />
+      </group>
+    </>
+  )
+}
+
+function PlanePortal() {
+  const planeRef = useRef()
+
+  const [camera] = useState(new THREE.PerspectiveCamera())
+
   const { aspect } = useThree()
 
   const { width, height } = useMemo(
@@ -125,62 +167,16 @@ function DepthCube({ scene, camera }) {
     [aspect]
   )
 
-  
-
-  return (
-    <>
-      <group position={[0, 0, -0.15]}>
-        <Physics gravity={[0, 0, -30]}>
-          <Suspense fallback={null}>
-            <PhyPlane rotate position={[0, 0, 0]} />
-            <PhyPlane position={[-0.5 * width, 0, 0]} rotation={[0, Math.PI / 2, 0]} />
-            <PhyPlane position={[0.5 * width, 0, 0]} rotation={[0, -(Math.PI / 2), 0]} />
-            <PhyPlane position={[0, 0.5 * height, 0]} rotation={[Math.PI / 2, 0, 0]} />
-            <PhyPlane position={[0, -0.5 * height, 0]} rotation={[-(Math.PI / 2), 0, 0]} />
-            <group scale={[1 / width, 1 / height, 1]}>
-              <InstancedSpheres />
-            </group>
-          </Suspense>
-        </Physics>
-        <group position={[0, 0, 0.5]}>
-          <Box position={[0, 0, -0.1]} >
-            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} transparent opacity={0} attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
-          </Box>
-          <Box args={[1, 1, 1, 8,16,16]}>
-            <meshBasicMaterial wireframe attachArray="material" />
-            <meshBasicMaterial wireframe attachArray="material" />
-            <meshBasicMaterial wireframe attachArray="material" />
-            <meshBasicMaterial wireframe attachArray="material" />
-            <meshBasicMaterial wireframe transparent opacity={0} attachArray="material" />
-            <meshBasicMaterial wireframe attachArray="material" />
-          </Box>
-        </group>
-        <ambientLight />
-      </group>
-    </>
-  )
-}
-
-function PlanePortal() {
-  const planeRef = useRef()
-
-  const [camera] = useState(new THREE.PerspectiveCamera())
-
   const { near, scene, target, portalHalfWidth, portalHalfHeight } = useMemo(() => {
     const target = new THREE.WebGLRenderTarget(1024, 1024)
     const scene = new THREE.Scene()
 
-    scene.fog = new THREE.Fog(0x000000, 0.0, 1.5)
+    scene.fog = new THREE.Fog(0x000000, 0.5, 1.5)
     scene.background = new THREE.Color(0x000000)
 
     const near = 0.1
-    const portalHalfWidth = 1 / 2
-    const portalHalfHeight = 1 / 2
+    const portalHalfWidth = width / 2
+    const portalHalfHeight = height / 2
 
     return { near, scene, target, portalHalfWidth, portalHalfHeight }
   }, [])
@@ -214,13 +210,28 @@ function PlanePortal() {
 
   return (
     <>
-      {createPortal(<DepthCube scene={scene} camera={camera} />, scene)}
-      <Plane ref={planeRef}>
+      {createPortal(<DepthCube width={width} height={height} />, scene)}
+      <Plane ref={planeRef} >
         <meshStandardMaterial attach="material" map={target.texture} />
       </Plane>
     </>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function InteractionManager(props) {
   const { isMobile } = props
