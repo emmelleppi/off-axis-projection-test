@@ -153,7 +153,7 @@ function DepthCube({ width, height }) {
           </Box>
         </group>
 
-        <Mouse />
+        {/* <Mouse /> */}
         <ambientLight />
       </group>
     </>
