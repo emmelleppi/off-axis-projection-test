@@ -107,20 +107,6 @@ function InstancedSpheres() {
   )
 }
 
-function MyBox({ speed = 0.0001 , ...props}) {
-  const material = useRef()
-  useFrame(() => (material.current.uniforms.dashOffset.value -= speed))
- 
-  return (
-    <mesh {...props}>
-      <meshLine attach="geometry" vertices={new THREE.BoxGeometry(1, 1, 1, 16, 16, 16).vertices} />
-      <meshLineMaterial attach="material" ref={material} transparent lineWidth={0.005} color={0xffffff}
-      dashArray={0.1} dashRatio={0.3}
-      />
-    </mesh>
-  )
-}
-
 function DepthCube({ scene, camera }) {
   const { aspect } = useThree()
 
@@ -156,31 +142,25 @@ function DepthCube({ scene, camera }) {
             </group>
           </Suspense>
         </Physics>
-        {/* <group position={[0, 0, 0.5]} >
-          <group scale={[1,1,2]} position={[0,0,0.5]} >
-            <MyBox speed={(1 + Math.random()) * 0.0001} />
-            <MyBox speed={(1 + Math.random()) * 0.0001} rotation={[0,0,Math.PI/2]} />
-            <MyBox speed={(1 + Math.random()) * 0.0001} />
-            <MyBox speed={(1 + Math.random()) * 0.0001} rotation={[0,0,Math.PI/2]} />
-          </group>
-        </group> */}
-        <Box position={[0, 0, 0.5]} args={[1, 1, 1]}>
-          <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
-          <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
-          <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
-          <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
-          <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} transparent opacity={0} attachArray="material" />
-          <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
-        </Box>
-        <Box position={[0, 0, 0.5]} args={[1, 1, 1, 8,16,16]}>
-          <meshBasicMaterial wireframe attachArray="material" />
-          <meshBasicMaterial wireframe attachArray="material" />
-          <meshBasicMaterial wireframe attachArray="material" />
-          <meshBasicMaterial wireframe attachArray="material" />
-          <meshBasicMaterial wireframe transparent opacity={0} attachArray="material" />
-          <meshBasicMaterial wireframe attachArray="material" />
-        </Box>
-        <ambientLight intensity={1} />
+        <group position={[0, 0, 0.5]}>
+          <Box position={[0, 0, -0.1]} >
+            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} transparent opacity={0} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
+          </Box>
+          <Box args={[1, 1, 1, 8,16,16]}>
+            <meshBasicMaterial wireframe attachArray="material" />
+            <meshBasicMaterial wireframe attachArray="material" />
+            <meshBasicMaterial wireframe attachArray="material" />
+            <meshBasicMaterial wireframe attachArray="material" />
+            <meshBasicMaterial wireframe transparent opacity={0} attachArray="material" />
+            <meshBasicMaterial wireframe attachArray="material" />
+          </Box>
+        </group>
+        <ambientLight />
       </group>
     </>
   )
