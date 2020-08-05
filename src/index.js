@@ -75,15 +75,15 @@ function InstancedSpheres() {
         
         noiseA: { value: false },
         noiseB: { value: false },
-        backfaceColor: { value: false },
+        backfaceColor: { value: true },
         
         dualStroke: { value: false },
         
         seeThrough: { value: true },
         
-        insideAltColor: { value: false },
+        insideAltColor: { value: true },
         
-        thickness: { value: 0.1 },
+        thickness: { value: 0.2 },
         secondThickness: { value: 0.5 },
         
         dashEnabled: { value: false },
@@ -93,7 +93,7 @@ function InstancedSpheres() {
         dashAnimate: { value: false },
 
         squeeze: { value: true },
-        squeezeMin: { value: 0.5 },
+        squeezeMin: { value: 0.15 },
         squeezeMax: { value: 1.0 }
       },
       fragmentShader: frag,
@@ -125,7 +125,7 @@ function DepthCube({ width, height }) {
     <>
       <group>
         
-        <Physics gravity={[0, 0, -10]}>
+        <Physics gravity={[0, 0, -30]}>
           <PhyPlane rotate position={[0, 0, -0.25]} />
           <PhyPlane position={[-0.5 * width, 0, -0.25]} rotation={[0, Math.PI / 2, 0]} />
           <PhyPlane position={[0.5 * width, 0, -0.25]} rotation={[0, -(Math.PI / 2), 0]} />
@@ -136,12 +136,12 @@ function DepthCube({ width, height }) {
 
         <group>
           <Box args={[width * 1.01, height * 1.01, 0.5 * 1.01]} >
-            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} transparent opacity={0} attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color="green" transparent opacity={0.75} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color="green" transparent opacity={0.75} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color="green" transparent opacity={0.75} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color="green" transparent opacity={0.75} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color="green" transparent opacity={0.75} transparent opacity={0} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} color="green" transparent opacity={0.75} attachArray="material" />
           </Box>
           <Box args={[width, height, 0.5, 8 / height ,16 / width, 16]} >
             <meshBasicMaterial wireframe attachArray="material" />
