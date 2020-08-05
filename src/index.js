@@ -22,10 +22,17 @@ const betaRef = createRef(0)
 const gammaRef = createRef(0)
 
 function Mouse() {
-  const { viewport } = useThree()
+  const { viewport, aspect } = useThree()
+
   return useFrame(state => {
-    betaRef.current = (state.mouse.x * viewport.width) / 2
-    gammaRef.current = (state.mouse.y * viewport.height) / 2
+    betaRef.current = clamp((state.mouse.y * viewport.height) *20, -45, 45)
+    gammaRef.current = clamp((state.mouse.x * viewport.width) *20, -45, 45)
+
+    state.camera.lookAt(0, 0, 0)
+
+    state.camera.position.x = -gammaRef.current / (90 * aspect)
+    state.camera.position.y = betaRef.current / (90 * aspect)
+    state.camera.position.z = 1 - 0.5 * Math.min(Math.abs(state.camera.position.x) + Math.abs(state.camera.position.y), 1)
   })
 }
 
@@ -37,7 +44,12 @@ function PhyPlane({ plain, rotate, rotation = [0, 0, 0], ...props }) {
     api.rotation.set(clamp(betaRef.current, -10, 10) / 120, clamp(gammaRef.current, -10, 10) / 120, 0)
   })
 
-  return <mesh ref={ref} />
+  return (
+    <mesh ref={ref}>
+      {/* <planeGeometry attach="geometry" args={[1,1,1]} />
+      <meshBasicMaterial attach="material" color="white" transparent opacity={0.3}/> */}
+    </mesh>
+  )
 }
 
 function InstancedSpheres() {
@@ -111,17 +123,19 @@ function DepthCube({ width, height }) {
 
   return (
     <>
-      <group position={[0, 0, -0.15]}>
-        <Physics gravity={[0, 0, -30]}>
-          <PhyPlane rotate position={[0, 0, 0]} />
-          <PhyPlane position={[-0.5 * width, 0, 0]} rotation={[0, Math.PI / 2, 0]} />
-          <PhyPlane position={[0.5 * width, 0, 0]} rotation={[0, -(Math.PI / 2), 0]} />
-          <PhyPlane position={[0, 0.5 * height, 0]} rotation={[Math.PI / 2, 0, 0]} />
-          <PhyPlane position={[0, -0.5 * height, 0]} rotation={[-(Math.PI / 2), 0, 0]} />
+      <group>
+        
+        <Physics gravity={[0, 0, -10]}>
+          <PhyPlane rotate position={[0, 0, -0.25]} />
+          <PhyPlane position={[-0.5 * width, 0, -0.25]} rotation={[0, Math.PI / 2, 0]} />
+          <PhyPlane position={[0.5 * width, 0, -0.25]} rotation={[0, -(Math.PI / 2), 0]} />
+          <PhyPlane position={[0, 0.5 * height, -0.25]} rotation={[Math.PI / 2, 0, 0]} />
+          <PhyPlane position={[0, -0.5 * height, -0.25]} rotation={[-(Math.PI / 2), 0, 0]} />
           <InstancedSpheres />
         </Physics>
-        <group position={[0, 0, 0.5]}>
-          <Box position={[0, 0, -0.1]}  args={[width, height, 1]} >
+
+        <group>
+          <Box args={[width * 1.01, height * 1.01, 0.5 * 1.01]} >
             <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
             <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
             <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
@@ -129,15 +143,16 @@ function DepthCube({ width, height }) {
             <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} transparent opacity={0} attachArray="material" />
             <meshBasicMaterial side={THREE.BackSide} color={0x0000ff} attachArray="material" />
           </Box>
-          <Box args={[width, height, 1, 8,16,16]}>
+          <Box args={[width, height, 0.5, 8 / height ,16 / width, 16]} >
             <meshBasicMaterial wireframe attachArray="material" />
             <meshBasicMaterial wireframe attachArray="material" />
             <meshBasicMaterial wireframe attachArray="material" />
             <meshBasicMaterial wireframe attachArray="material" />
-            <meshBasicMaterial wireframe transparent opacity={0} attachArray="material" />
+            <meshBasicMaterial side={THREE.BackSide} transparent opacity={0} attachArray="material" />
             <meshBasicMaterial wireframe attachArray="material" />
           </Box>
         </group>
+
         {/* <Mouse /> */}
         <ambientLight />
       </group>
@@ -246,7 +261,7 @@ function InteractionManager(props) {
     [setClicked]
   )
 
-  useFrame(({ camera }) => {
+  useFrame(({ camera, aspect }) => {
     if (!rotation.current) return
 
     rotation.current.update()
@@ -262,8 +277,8 @@ function InteractionManager(props) {
 
     camera.lookAt(0, 0, 0)
 
-    camera.position.x = -gammaRef.current / 90
-    camera.position.y = betaRef.current / 90
+    camera.position.x = -gammaRef.current / (90 * aspect)
+    camera.position.y = betaRef.current / (90 * aspect)
     camera.position.z = 1 - 0.5 * Math.min(Math.abs(camera.position.x) + Math.abs(camera.position.y), 1)
   })
 
