@@ -22,11 +22,11 @@ const betaRef = createRef(0)
 const gammaRef = createRef(0)
 
 function Mouse() {
-  const { viewport } = useThree()
+  const { viewport, aspect } = useThree()
 
   return useFrame(state => {
-    betaRef.current = clamp((state.mouse.y * viewport.height) *20, -45, 45)
-    gammaRef.current = clamp((state.mouse.x * viewport.width) *20, -45, 45)
+    betaRef.current = clamp((state.mouse.y * viewport.height) *200, -45 * aspect, 45 * aspect)
+    gammaRef.current = clamp((state.mouse.x * viewport.width) *200, -45 * aspect, 45 * aspect)
 
     state.camera.lookAt(0, 0, 0)
 
@@ -261,7 +261,7 @@ function InteractionManager(props) {
     [setClicked]
   )
 
-  useFrame(({ camera }) => {
+  useFrame(({ camera, aspect }) => {
     if (!rotation.current) return
 
     rotation.current.update()
@@ -272,8 +272,8 @@ function InteractionManager(props) {
 
     if (!beta || !gamma) return
 
-    betaRef.current = clamp(beta, -45, 45)
-    gammaRef.current = clamp(gamma, -45, 45)
+    betaRef.current = clamp(beta, -45 * aspect, 45 * aspect)
+    gammaRef.current = clamp(gamma, -45 * aspect, 45 * aspect)
 
     camera.lookAt(0, 0, 0)
 
