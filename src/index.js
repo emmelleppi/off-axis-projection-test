@@ -21,12 +21,12 @@ const rotation = createRef()
 const betaRef = createRef(0)
 const gammaRef = createRef(0)
 
-function Mouse() {
+function Mouse({width, height}) {
   const { viewport, aspect } = useThree()
 
   return useFrame(state => {
-    betaRef.current = clamp((state.mouse.y * viewport.height) *200, -45 * aspect, 45 * aspect)
-    gammaRef.current = clamp((state.mouse.x * viewport.width) *200, -45 * aspect, 45 * aspect)
+    betaRef.current = clamp((state.mouse.y * viewport.height) *200, -45 * height, 45 * height)
+    gammaRef.current = clamp((state.mouse.x * viewport.width) *200, -45 * width, 45 * width)
 
     state.camera.lookAt(0, 0, 0)
 
@@ -153,34 +153,17 @@ function DepthCube({ width, height }) {
           </Box>
         </group>
 
-        {/* <Mouse /> */}
+        {/* <Mouse width={width} height={height} /> */}
         <ambientLight />
       </group>
     </>
   )
 }
 
-function PlanePortal() {
+function PlanePortal({width, height}) {
   const planeRef = useRef()
 
   const [camera] = useState(new THREE.PerspectiveCamera())
-
-  const { aspect } = useThree()
-
-  const { width, height } = useMemo(
-    () =>
-      aspect > 1
-        ? {
-            width: 1,
-            height: 1 / aspect
-          }
-        : {
-            width: aspect,
-            height: 1
-          },
-
-    [aspect]
-  )
 
   const { near, scene, target, portalHalfWidth, portalHalfHeight } = useMemo(() => {
     const target = new THREE.WebGLRenderTarget(1024, 1024)
@@ -251,6 +234,23 @@ function PlanePortal() {
 function InteractionManager(props) {
   const { isMobile } = props
 
+  const { aspect } = useThree()
+
+  const { width, height } = useMemo(
+    () =>
+      aspect > 1
+        ? {
+            width: 1,
+            height: 1 / aspect
+          }
+        : {
+            width: aspect,
+            height: 1
+          },
+
+    [aspect]
+  )
+
   const [clicked, setClicked] = useState(false)
 
   const handleClick = useCallback(
@@ -272,8 +272,8 @@ function InteractionManager(props) {
 
     if (!beta || !gamma) return
 
-    betaRef.current = clamp(beta, -45 * aspect, 45 * aspect)
-    gammaRef.current = clamp(gamma, -45 * aspect, 45 * aspect)
+    betaRef.current = clamp(beta, -45 * height, 45 * height)
+    gammaRef.current = clamp(gamma, -45 * width, 45 * width)
 
     camera.lookAt(0, 0, 0)
 
@@ -283,7 +283,7 @@ function InteractionManager(props) {
   })
 
   return clicked ? (
-    <PlanePortal />
+    <PlanePortal width={width} height={height} />
   ) : (
     <Plane material-transparent material-opacity={0} onClick={handleClick}>
       <Html center scaleFactor={10}>
