@@ -22,7 +22,7 @@ const betaRef = createRef(0)
 const gammaRef = createRef(0)
 
 function Mouse() {
-  const { viewport, aspect } = useThree()
+  const { viewport } = useThree()
 
   return useFrame(state => {
     betaRef.current = clamp((state.mouse.y * viewport.height) *20, -45, 45)
@@ -30,8 +30,8 @@ function Mouse() {
 
     state.camera.lookAt(0, 0, 0)
 
-    state.camera.position.x = -gammaRef.current / (90 * aspect)
-    state.camera.position.y = betaRef.current / (90 * aspect)
+    state.camera.position.x = -gammaRef.current / 90
+    state.camera.position.y = betaRef.current / 90
     state.camera.position.z = 1 - 0.5 * Math.min(Math.abs(state.camera.position.x) + Math.abs(state.camera.position.y), 1)
   })
 }
@@ -153,7 +153,7 @@ function DepthCube({ width, height }) {
           </Box>
         </group>
 
-        {/* <Mouse /> */}
+        <Mouse />
         <ambientLight />
       </group>
     </>
@@ -261,7 +261,7 @@ function InteractionManager(props) {
     [setClicked]
   )
 
-  useFrame(({ camera, aspect }) => {
+  useFrame(({ camera }) => {
     if (!rotation.current) return
 
     rotation.current.update()
@@ -277,8 +277,8 @@ function InteractionManager(props) {
 
     camera.lookAt(0, 0, 0)
 
-    camera.position.x = -gammaRef.current / (90 * aspect)
-    camera.position.y = betaRef.current / (90 * aspect)
+    camera.position.x = -gammaRef.current / 90
+    camera.position.y = betaRef.current / 90
     camera.position.z = 1 - 0.5 * Math.min(Math.abs(camera.position.x) + Math.abs(camera.position.y), 1)
   })
 
