@@ -7,7 +7,6 @@ import { DeviceOrientationControls } from 'three/examples/jsm/controls/DeviceOri
 import { Physics, useBox, usePlane, useSphere } from 'use-cannon'
 import clamp from 'lodash.clamp'
 
-import 'styled-components/macro'
 import './styles.css'
 
 const rotation = createRef()
@@ -18,8 +17,8 @@ function Mouse({width, height}) {
   const { viewport } = useThree()
 
   return useFrame(state => {
-    betaRef.current = -clamp((state.mouse.y * viewport.height) *200, -45 * height, 45 * height)
-    gammaRef.current = -clamp((state.mouse.x * viewport.width) *200, -45 * width, 45 * width)
+    betaRef.current = -clamp((state.mouse.y * viewport.height) * 200, -45 * height, 45 * height)
+    gammaRef.current = -clamp((state.mouse.x * viewport.width) * 200, -45 * width, 45 * width)
 
     state.camera.lookAt(0, 0, 0)
 
@@ -36,8 +35,9 @@ function InstancedBoxes({ number = 15 }) {
   const positions = useMemo(() => {
     const _positions = []
 
+    // =) generator lol
     for(let index = 0; index <= number - 5; index++) {
-      _positions.push([0.2 * Math.cos(Math.PI * index / (number - 5)), -0.1 - 0.2 * Math.sin(Math.PI * index / (number - 5)), -0.25])
+      _positions.push([0.2 * Math.cos(Math.PI * index / (number - 5)), - 0.1 - 0.2 * Math.sin(Math.PI * index / (number - 5)), -0.25])
     }
     
     _positions.push([-0.1, 0.1, -0.25])
@@ -63,7 +63,7 @@ function InstancedBoxes({ number = 15 }) {
           normalMap={carbon}
           roughness={0.2}
           metalness={0.2}
-          color="purple"
+          color="black"
           attach="material"
         />
     </instancedMesh>
@@ -83,7 +83,7 @@ function PhyPlane({ plain, rotate, rotation = [0, 0, 0], ...props }) {
   )
 }
 
-function InstancedSpheres() {
+function Sphere() {
   const [map, normal] = useLoader(THREE.TextureLoader, ["/vortex.jpg",'/flakes.png'])
 
   const [ref] = useSphere(() => ({
@@ -132,7 +132,7 @@ function Boxes({ width, height }) {
           roughness={0.2}
           metalness={0.2}
           side={THREE.BackSide}
-          color="pink"
+          color="orange"
           attachArray="material"
         />
        <meshPhysicalMaterial
@@ -143,7 +143,7 @@ function Boxes({ width, height }) {
           roughness={0.2}
           metalness={0.2}
           side={THREE.BackSide}
-          color="pink"
+          color="orange"
           attachArray="material"
         />
        <meshPhysicalMaterial
@@ -154,7 +154,7 @@ function Boxes({ width, height }) {
           roughness={0.2}
           metalness={0.2}
           side={THREE.BackSide}
-          color="pink"
+          color="orange"
           attachArray="material"
         />
        <meshPhysicalMaterial
@@ -165,7 +165,7 @@ function Boxes({ width, height }) {
           roughness={0.2}
           metalness={0.2}
           side={THREE.BackSide}
-          color="pink"
+          color="orange"
           attachArray="material"
         />
        <meshPhysicalMaterial
@@ -182,7 +182,7 @@ function Boxes({ width, height }) {
           roughness={0.2}
           metalness={0.2}
           side={THREE.BackSide}
-          color="pink"
+          color="orange"
           attachArray="material"
         />
      </Box>
@@ -193,39 +193,41 @@ function Boxes({ width, height }) {
 function DepthCube({ width, height }) {
 
   return (
-    <>
-      <group>
-        <Physics gravity={[0, 0, -30]}>
-          <PhyPlane rotate position={[0, 0, -0.25]} />
-          <PhyPlane position={[-0.5 * width, 0, -0.25]} rotation={[0, Math.PI / 2, 0]} />
-          <PhyPlane position={[0.5 * width, 0, -0.25]} rotation={[0, -(Math.PI / 2), 0]} />
-          <PhyPlane position={[0, 0.5 * height, -0.25]} rotation={[Math.PI / 2, 0, 0]} />
-          <PhyPlane position={[0, -0.5 * height, -0.25]} rotation={[-(Math.PI / 2), 0, 0]} />
-          <Suspense fallback={null}>
-            <InstancedSpheres />
-            <InstancedBoxes />
-            <Boxes width={width} height={height}  />
-          </Suspense>
-        </Physics>
+    <group>
+      <Physics gravity={[0, 0, -30]}>
 
-        {/* <Mouse width={width} height={height} /> */}
-        <hemisphereLight intensity={0.35} />
-        <spotLight
-          position={[-1, -1, 1]}
-          angle={0.3}
-          penumbra={1}
-          intensity={1}
-          castShadow
-          shadow-mapSize-width={1024}
-          shadow-mapSize-height={1024}
-        />
-        <pointLight position={[1, 1, 1]} intensity={0.3} />
-      </group>
-    </>
+        <PhyPlane rotate position={[0, 0, -0.25]} />
+        <PhyPlane position={[-0.5 * width, 0, -0.25]} rotation={[0, Math.PI / 2, 0]} />
+        <PhyPlane position={[0.5 * width, 0, -0.25]} rotation={[0, -(Math.PI / 2), 0]} />
+        <PhyPlane position={[0, 0.5 * height, -0.25]} rotation={[Math.PI / 2, 0, 0]} />
+        <PhyPlane position={[0, -0.5 * height, -0.25]} rotation={[-(Math.PI / 2), 0, 0]} />
+        
+        <Suspense fallback={null}>
+          <Sphere />
+          <InstancedBoxes />
+          <Boxes width={width} height={height}  />
+        </Suspense>
+
+      </Physics>
+
+      
+      {/* <Mouse width={width} height={height} /> for desktop testing */}
+      <hemisphereLight intensity={0.35} />
+      <spotLight
+        position={[-1, -1, 1]}
+        angle={0.3}
+        penumbra={1}
+        intensity={1}
+        castShadow
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+      />
+      <pointLight position={[1, 1, 1]} intensity={0.3} />
+    </group>
   )
 }
 
-function PlanePortal({width, height}) {
+function PlanePortal({ width, height }) {
   const planeRef = useRef()
 
   const [camera] = useState(new THREE.PerspectiveCamera())
@@ -242,7 +244,7 @@ function PlanePortal({width, height}) {
     const portalHalfHeight = height / 2
 
     return { near, scene, target, portalHalfWidth, portalHalfHeight }
-  }, [])
+  }, [width, height])
 
   useFrame(state => {
     camera.position.copy(state.camera.position)
@@ -282,8 +284,6 @@ function PlanePortal({width, height}) {
 }
  
 function InteractionManager(props) {
-  const { isMobile } = props
-
   const { aspect } = useThree()
 
   const { width, height } = useMemo(
@@ -311,7 +311,7 @@ function InteractionManager(props) {
     [setClicked]
   )
 
-  useFrame(({ camera, aspect }) => {
+  useFrame(({ camera }) => {
     if (!rotation.current) return
 
     rotation.current.update()
@@ -354,7 +354,7 @@ function App() {
         colorManagement
         pixelRatio={Math.min(2, isMobile ? window.devicePixelRatio : 1)}
         camera={{ position: [0, 0, 1], far: 100, near: 0.1 }}>
-        <InteractionManager isMobile={isMobile} />
+        <InteractionManager />
       </Canvas>
     </>
   )
