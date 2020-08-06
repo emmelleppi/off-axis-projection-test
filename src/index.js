@@ -1,39 +1,73 @@
-import React, { useRef, useMemo, createRef, useState, useCallback, Suspense, useEffect } from 'react'
+import React, { useRef, useMemo, createRef, useState, useCallback, Suspense } from 'react'
 import ReactDOM from 'react-dom'
 import * as THREE from 'three'
-import { Canvas, createPortal, useFrame, useThree, extend } from 'react-three-fiber'
-import { Plane, Html, Box } from 'drei'
+import { Canvas, createPortal, useFrame, useThree, useLoader } from 'react-three-fiber'
+import { Plane, Html, Box, Icosahedron } from 'drei'
 import { DeviceOrientationControls } from 'three/examples/jsm/controls/DeviceOrientationControls'
-import { Physics, usePlane, useSphere } from 'use-cannon'
+import { Physics, useBox, usePlane, useSphere } from 'use-cannon'
 import clamp from 'lodash.clamp'
-import * as meshline from 'threejs-meshline'
-
-import { addBarycentricCoordinates, unindexBufferGeometry } from './geom'
-import vert from './shader/shader.vert'
-import frag from './shader/shader.frag'
 
 import 'styled-components/macro'
 import './styles.css'
-
-extend(meshline)
 
 const rotation = createRef()
 const betaRef = createRef(0)
 const gammaRef = createRef(0)
 
 function Mouse({width, height}) {
-  const { viewport, aspect } = useThree()
+  const { viewport } = useThree()
 
   return useFrame(state => {
-    betaRef.current = clamp((state.mouse.y * viewport.height) *200, -45 * height, 45 * height)
-    gammaRef.current = clamp((state.mouse.x * viewport.width) *200, -45 * width, 45 * width)
+    betaRef.current = -clamp((state.mouse.y * viewport.height) *200, -45 * height, 45 * height)
+    gammaRef.current = -clamp((state.mouse.x * viewport.width) *200, -45 * width, 45 * width)
 
     state.camera.lookAt(0, 0, 0)
 
-    state.camera.position.x = -gammaRef.current / 90
-    state.camera.position.y = betaRef.current / 90
+    state.camera.position.x = -gammaRef.current / 120
+    state.camera.position.y = betaRef.current / 120
     state.camera.position.z = 1 - 0.5 * Math.min(Math.abs(state.camera.position.x) + Math.abs(state.camera.position.y), 1)
   })
+}
+
+
+function InstancedBoxes({ number = 15 }) {
+  const carbon = useLoader(THREE.TextureLoader, '/carbon.jpeg')
+
+  const positions = useMemo(() => {
+    const _positions = []
+
+    for(let index = 0; index <= number - 5; index++) {
+      _positions.push([0.2 * Math.cos(Math.PI * index / (number - 5)), -0.1 - 0.2 * Math.sin(Math.PI * index / (number - 5)), -0.25])
+    }
+    
+    _positions.push([-0.1, 0.1, -0.25])
+    _positions.push([0.1, 0.1, -0.25])
+    _positions.push([-0.1, 0.15, -0.25])
+    _positions.push([0.1, 0.15, -0.25])
+
+    return _positions
+  }, [number])
+
+  const [ref] = useBox(index => ({
+    position: positions[index],
+    args: [0.08, 0.08, 0.08]
+  }))
+  
+  return (
+    <instancedMesh ref={ref} castShadow receiveShadow args={[null, null, number]}>
+      <boxBufferGeometry attach="geometry" args={[0.08, 0.08, 0.08]} />
+      <meshPhysicalMaterial
+          clearcoat={1}
+          clearcoatRoughness={0.1}
+          normalScale={[1.4,1.4]}
+          normalMap={carbon}
+          roughness={0.2}
+          metalness={0.2}
+          color="purple"
+          attach="material"
+        />
+    </instancedMesh>
+  )
 }
 
 function PhyPlane({ plain, rotate, rotation = [0, 0, 0], ...props }) {
@@ -45,77 +79,114 @@ function PhyPlane({ plain, rotate, rotation = [0, 0, 0], ...props }) {
   })
 
   return (
-    <mesh ref={ref}>
-      {/* <planeGeometry attach="geometry" args={[1,1,1]} />
-      <meshBasicMaterial attach="material" color="white" transparent opacity={0.3}/> */}
-    </mesh>
+    <mesh ref={ref} />
   )
 }
 
 function InstancedSpheres() {
+  const [map, normal] = useLoader(THREE.TextureLoader, ["/vortex.jpg",'/flakes.png'])
+
   const [ref] = useSphere(() => ({
     mass: 1,
     position: [0, 0, 1],
-    args: 0.07
+    args: 0.05
   }))
 
-  const materialProps = useMemo(
-    () => ({
-      extensions: {
-        // needed for anti-alias smoothstep, aastep()
-        derivatives: true
-      },
-      transparent: true,
-      side: THREE.DoubleSide,
-      uniforms: {
-        time: { value: 0 },
-        
-        fill: { value: new THREE.Color(0xf2003c) },
-        stroke: { value: new THREE.Color(0xf2003c) },
-        
-        noiseA: { value: false },
-        noiseB: { value: false },
-        backfaceColor: { value: true },
-        
-        dualStroke: { value: false },
-        
-        seeThrough: { value: true },
-        
-        insideAltColor: { value: true },
-        
-        thickness: { value: 0.2 },
-        secondThickness: { value: 0.5 },
-        
-        dashEnabled: { value: false },
-        dashRepeats: { value: 10.0 },
-        dashOverlap: { value: false },
-        dashLength: { value: 0.5 },
-        dashAnimate: { value: false },
-
-        squeeze: { value: true },
-        squeezeMin: { value: 0.15 },
-        squeezeMax: { value: 1.0 }
-      },
-      fragmentShader: frag,
-      vertexShader: vert
-    }),
-    []
-  )
-
-  const geometry = useMemo(() => {
-    const geometry = new THREE.IcosahedronBufferGeometry(0.07, 1, 1)
-    const edgeRemoval = false
-    unindexBufferGeometry(geometry)
-    addBarycentricCoordinates(geometry, edgeRemoval)
-    return geometry
-  }, [])
-
-  useFrame(() => void (ref.current.material.uniforms.time.value += 0.01))
+  const _materialProps = {
+    clearcoat: 1,
+    clearcoatRoughness: 0.1,
+    metalness: 0.1,
+    roughness: 0.2,
+    map: map,
+    normalMap: normal,
+    normalScale: [0.3, 0.3],
+    alphaMap: map,
+    transmission: 0.6,
+    transparent: true
+  }
 
   return (
-    <mesh ref={ref} geometry={geometry}>
-      <shaderMaterial {...materialProps} />
-    </mesh>
+    <group ref={ref}>
+      <Icosahedron receiveShadow castShadow args={[0.05, 4, 4]}>
+        <meshPhysicalMaterial {..._materialProps} color="red" side={THREE.BackSide} />
+      </Icosahedron>
+      <Icosahedron args={[0.05, 4, 4]}>
+        <meshPhysicalMaterial {..._materialProps} color="blue"  transmission={0.4} />
+      </Icosahedron>
+    </group>
+  )
+}
+
+function Boxes({ width, height }) {
+  const [carbon] = useLoader(THREE.TextureLoader, ["/carbon.jpeg"])
+
+
+  return (
+    <group>
+      <Box args={[width, height, 0.5]} receiveShadow >
+        <meshPhysicalMaterial
+          clearcoat={1}
+          clearcoatRoughness={0.1}
+          normalScale={[1.4,1.4]}
+          normalMap={carbon}
+          roughness={0.2}
+          metalness={0.2}
+          side={THREE.BackSide}
+          color="pink"
+          attachArray="material"
+        />
+       <meshPhysicalMaterial
+          clearcoat={1}
+          clearcoatRoughness={0.1}
+          normalScale={[1.4,1.4]}
+          normalMap={carbon}
+          roughness={0.2}
+          metalness={0.2}
+          side={THREE.BackSide}
+          color="pink"
+          attachArray="material"
+        />
+       <meshPhysicalMaterial
+          clearcoat={1}
+          clearcoatRoughness={0.1}
+          normalScale={[1.4,1.4]}
+          normalMap={carbon}
+          roughness={0.2}
+          metalness={0.2}
+          side={THREE.BackSide}
+          color="pink"
+          attachArray="material"
+        />
+       <meshPhysicalMaterial
+          clearcoat={1}
+          clearcoatRoughness={0.1}
+          normalScale={[1.4,1.4]}
+          normalMap={carbon}
+          roughness={0.2}
+          metalness={0.2}
+          side={THREE.BackSide}
+          color="pink"
+          attachArray="material"
+        />
+       <meshPhysicalMaterial
+          transparent
+          opacity={0}
+          side={THREE.BackSide}
+          attachArray="material"
+        />
+       <meshPhysicalMaterial
+          clearcoat={1}
+          clearcoatRoughness={0.1}
+          normalScale={[1.4,1.4]}
+          normalMap={carbon}
+          roughness={0.2}
+          metalness={0.2}
+          side={THREE.BackSide}
+          color="pink"
+          attachArray="material"
+        />
+     </Box>
+   </group>
   )
 }
 
@@ -124,37 +195,31 @@ function DepthCube({ width, height }) {
   return (
     <>
       <group>
-        
         <Physics gravity={[0, 0, -30]}>
           <PhyPlane rotate position={[0, 0, -0.25]} />
           <PhyPlane position={[-0.5 * width, 0, -0.25]} rotation={[0, Math.PI / 2, 0]} />
           <PhyPlane position={[0.5 * width, 0, -0.25]} rotation={[0, -(Math.PI / 2), 0]} />
           <PhyPlane position={[0, 0.5 * height, -0.25]} rotation={[Math.PI / 2, 0, 0]} />
           <PhyPlane position={[0, -0.5 * height, -0.25]} rotation={[-(Math.PI / 2), 0, 0]} />
-          <InstancedSpheres />
+          <Suspense fallback={null}>
+            <InstancedSpheres />
+            <InstancedBoxes />
+            <Boxes width={width} height={height}  />
+          </Suspense>
         </Physics>
 
-        <group>
-          <Box args={[width * 1.01, height * 1.01, 0.5 * 1.01]} >
-            <meshBasicMaterial side={THREE.BackSide} color="green" transparent opacity={0.75} attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} color="green" transparent opacity={0.75} attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} color="green" transparent opacity={0.75} attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} color="green" transparent opacity={0.75} attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} color="green" transparent opacity={0.75} transparent opacity={0} attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} color="green" transparent opacity={0.75} attachArray="material" />
-          </Box>
-          <Box args={[width, height, 0.5, 8 / height ,16 / width, 16]} >
-            <meshBasicMaterial wireframe attachArray="material" />
-            <meshBasicMaterial wireframe attachArray="material" />
-            <meshBasicMaterial wireframe attachArray="material" />
-            <meshBasicMaterial wireframe attachArray="material" />
-            <meshBasicMaterial side={THREE.BackSide} transparent opacity={0} attachArray="material" />
-            <meshBasicMaterial wireframe attachArray="material" />
-          </Box>
-        </group>
-
         {/* <Mouse width={width} height={height} /> */}
-        <ambientLight />
+        <hemisphereLight intensity={0.35} />
+        <spotLight
+          position={[-1, -1, 1]}
+          angle={0.3}
+          penumbra={1}
+          intensity={1}
+          castShadow
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
+        />
+        <pointLight position={[1, 1, 1]} intensity={0.3} />
       </group>
     </>
   )
@@ -169,7 +234,7 @@ function PlanePortal({width, height}) {
     const target = new THREE.WebGLRenderTarget(1024, 1024)
     const scene = new THREE.Scene()
 
-    scene.fog = new THREE.Fog(0x000000, 0.5, 1.5)
+    scene.fog = new THREE.Fog(0x000000, 0.5, 3)
     scene.background = new THREE.Color(0x000000)
 
     const near = 0.1
@@ -215,22 +280,7 @@ function PlanePortal({width, height}) {
     </>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ 
 function InteractionManager(props) {
   const { isMobile } = props
 
@@ -300,23 +350,12 @@ function App() {
     <>
       <Canvas
         concurrent
+        shadowMap
         colorManagement
         pixelRatio={Math.min(2, isMobile ? window.devicePixelRatio : 1)}
         camera={{ position: [0, 0, 1], far: 100, near: 0.1 }}>
         <InteractionManager isMobile={isMobile} />
       </Canvas>
-      <div
-        css={`
-          position: fixed;
-          top: 0;
-          right: 0;
-          margin: 1rem;
-          color: white;
-          font-size: 3rem;
-          font-family: 'Fredoka One';
-        `}>
-        <div>{`10 ❤️`}</div>
-      </div>
     </>
   )
 }
