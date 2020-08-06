@@ -1,8 +1,8 @@
-const { addWebpackModuleRule, override } = require('customize-cra')
-const { addReactRefresh } = require('customize-cra-react-refresh')
+const { addWebpackModuleRule, override } = require("customize-cra");
+const { addReactRefresh } = require("customize-cra-react-refresh");
 
 module.exports = (config, env) => {
-  config.resolve.extensions = [...config.resolve.extensions, '.ts', '.tsx']
+  config.resolve.extensions = [...config.resolve.extensions, ".ts", ".tsx"];
   return override(
     addReactRefresh(),
     /*removeModuleScopePlugin(),
@@ -15,7 +15,7 @@ module.exports = (config, env) => {
       }),*/
     addWebpackModuleRule({
       test: /\.(glsl|vs|fs|vert|frag)$/,
-      use: ['raw-loader', 'glslify-loader']
+      use: ["raw-loader", "glslify-loader"],
     })
-  )(config, env)
-}
+  )(config, env);
+};
