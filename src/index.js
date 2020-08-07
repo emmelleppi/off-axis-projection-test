@@ -19,12 +19,19 @@ import { Plane, Html, Box, Icosahedron } from "drei";
 import { DeviceOrientationControls } from "three/examples/jsm/controls/DeviceOrientationControls";
 import { Physics, useBox, usePlane, useSphere } from "use-cannon";
 import clamp from "lodash.clamp";
+import create from "zustand";
+import COLOR from "nice-color-palettes";
 
 import "./styles.css";
 
 const rotation = createRef();
 const betaRef = createRef(0);
 const gammaRef = createRef(0);
+
+const [useStore] = create((set) => ({
+  count: 1,
+  increase: () => set((state) => ({ count: state.count + 1 })),
+}));
 
 function Mouse({ width, height }) {
   const { viewport } = useThree();
@@ -64,23 +71,23 @@ function InstancedBoxes({ number = 15 }) {
     // =) generator lol
     for (let index = 0; index <= number - 5; index++) {
       _positions.push([
-        0.2 * Math.cos((Math.PI * index) / (number - 5)),
-        -0.1 - 0.2 * Math.sin((Math.PI * index) / (number - 5)),
+        0.15 * Math.cos((Math.PI * index) / (number - 5)),
+        -0.1 - 0.15 * Math.sin((Math.PI * index) / (number - 5)),
         -0.25,
       ]);
     }
 
-    _positions.push([-0.1, 0.1, -0.25]);
-    _positions.push([0.1, 0.1, -0.25]);
-    _positions.push([-0.1, 0.15, -0.25]);
-    _positions.push([0.1, 0.15, -0.25]);
+    _positions.push([-0.08, 0.1, -0.25]);
+    _positions.push([0.08, 0.1, -0.25]);
+    _positions.push([-0.08, 0.15, -0.25]);
+    _positions.push([0.08, 0.15, -0.25]);
 
     return _positions;
   }, [number]);
 
   const [ref] = useBox((index) => ({
     position: positions[index],
-    args: [0.08, 0.08, 0.08],
+    args: [0.06, 0.06, 0.06],
   }));
 
   return (
@@ -90,7 +97,7 @@ function InstancedBoxes({ number = 15 }) {
       receiveShadow
       args={[null, null, number]}
     >
-      <boxBufferGeometry attach="geometry" args={[0.08, 0.08, 0.08]} />
+      <boxBufferGeometry attach="geometry" args={[0.06, 0.06, 0.06]} />
       <meshPhysicalMaterial
         clearcoat={1}
         clearcoatRoughness={0.1}
@@ -120,7 +127,7 @@ function PhyPlane({ plain, rotate, rotation = [0, 0, 0], ...props }) {
   return <mesh ref={ref} />;
 }
 
-function Sphere() {
+function Sphere({ index }) {
   const [map, normal] = useLoader(THREE.TextureLoader, [
     "/vortex.jpg",
     "/flakes.png",
@@ -136,12 +143,12 @@ function Sphere() {
     clearcoat: 1,
     clearcoatRoughness: 0.1,
     metalness: 0.1,
-    roughness: 0.2,
+    roughness: 0.3,
     map: map,
     normalMap: normal,
     normalScale: [0.3, 0.3],
     alphaMap: map,
-    transmission: 0.6,
+    transmission: 0.5,
     transparent: true,
   };
 
@@ -150,15 +157,15 @@ function Sphere() {
       <Icosahedron receiveShadow castShadow args={[0.05, 4, 4]}>
         <meshPhysicalMaterial
           {..._materialProps}
-          color="red"
+          color={COLOR[index][0]}
           side={THREE.BackSide}
         />
       </Icosahedron>
       <Icosahedron args={[0.05, 4, 4]}>
         <meshPhysicalMaterial
           {..._materialProps}
-          color="blue"
-          transmission={0.4}
+          color={COLOR[index][4]}
+          transmission={0.2}
         />
       </Icosahedron>
     </group>
@@ -168,76 +175,39 @@ function Sphere() {
 function Boxes({ width, height }) {
   const [carbon] = useLoader(THREE.TextureLoader, ["/carbon.jpeg"]);
 
+  const materialProps = {
+    clearcoat: 1,
+    clearcoatRoughness: 0.1,
+    normalScale: [1.4, 1.4],
+    normalMap: carbon,
+    roughness: 0.2,
+    metalness: 0.2,
+    side: THREE.BackSide,
+    color: "orange",
+  };
+
   return (
     <group>
       <Box args={[width, height, 0.5]} receiveShadow>
-        <meshPhysicalMaterial
-          clearcoat={1}
-          clearcoatRoughness={0.1}
-          normalScale={[1.4, 1.4]}
-          normalMap={carbon}
-          roughness={0.2}
-          metalness={0.2}
-          side={THREE.BackSide}
-          color="orange"
-          attachArray="material"
-        />
-        <meshPhysicalMaterial
-          clearcoat={1}
-          clearcoatRoughness={0.1}
-          normalScale={[1.4, 1.4]}
-          normalMap={carbon}
-          roughness={0.2}
-          metalness={0.2}
-          side={THREE.BackSide}
-          color="orange"
-          attachArray="material"
-        />
-        <meshPhysicalMaterial
-          clearcoat={1}
-          clearcoatRoughness={0.1}
-          normalScale={[1.4, 1.4]}
-          normalMap={carbon}
-          roughness={0.2}
-          metalness={0.2}
-          side={THREE.BackSide}
-          color="orange"
-          attachArray="material"
-        />
-        <meshPhysicalMaterial
-          clearcoat={1}
-          clearcoatRoughness={0.1}
-          normalScale={[1.4, 1.4]}
-          normalMap={carbon}
-          roughness={0.2}
-          metalness={0.2}
-          side={THREE.BackSide}
-          color="orange"
-          attachArray="material"
-        />
+        <meshPhysicalMaterial {...materialProps} attachArray="material" />
+        <meshPhysicalMaterial {...materialProps} attachArray="material" />
+        <meshPhysicalMaterial {...materialProps} attachArray="material" />
+        <meshPhysicalMaterial {...materialProps} attachArray="material" />
         <meshPhysicalMaterial
           transparent
           opacity={0}
           side={THREE.BackSide}
           attachArray="material"
         />
-        <meshPhysicalMaterial
-          clearcoat={1}
-          clearcoatRoughness={0.1}
-          normalScale={[1.4, 1.4]}
-          normalMap={carbon}
-          roughness={0.2}
-          metalness={0.2}
-          side={THREE.BackSide}
-          color="orange"
-          attachArray="material"
-        />
+        <meshPhysicalMaterial {...materialProps} attachArray="material" />
       </Box>
     </group>
   );
 }
 
 function DepthCube({ width, height }) {
+  const count = useStore((s) => s.count);
+
   return (
     <group>
       <Physics gravity={[0, 0, -30]}>
@@ -260,7 +230,9 @@ function DepthCube({ width, height }) {
         />
 
         <Suspense fallback={null}>
-          <Sphere />
+          {new Array(count).fill().map((_, index) => (
+            <Sphere key={`0${index}`} index={index} />
+          ))}
           <InstancedBoxes />
           <Boxes width={width} height={height} />
         </Suspense>
@@ -287,6 +259,8 @@ function PlanePortal({ width, height }) {
 
   const [camera] = useState(new THREE.PerspectiveCamera());
 
+  const increase = useStore((s) => s.increase);
+
   const {
     near,
     scene,
@@ -297,7 +271,7 @@ function PlanePortal({ width, height }) {
     const target = new THREE.WebGLRenderTarget(1024, 1024);
     const scene = new THREE.Scene();
 
-    scene.fog = new THREE.Fog(0x000000, 0.5, 3);
+    scene.fog = new THREE.Fog(0x000000, 0.5, 2.5);
     scene.background = new THREE.Color(0x000000);
 
     const near = 0.1;
@@ -344,7 +318,7 @@ function PlanePortal({ width, height }) {
   return (
     <>
       {createPortal(<DepthCube width={width} height={height} />, scene)}
-      <Plane ref={planeRef}>
+      <Plane ref={planeRef} onClick={increase}>
         <meshStandardMaterial attach="material" map={target.texture} />
       </Plane>
     </>
